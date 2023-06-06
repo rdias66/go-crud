@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"go-crud/models"
+	"go-crud/router"
+	"net/http"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -16,12 +18,13 @@ func main() {
 	}
 	fmt.Println("Database " + db.Name() + " connected at port: 5432")
 	migration := models.CreateTables(db)
-	testUser := models.User{ID: "1!", Name: "Test name", Email: "test@test.test"}
-	db.Create(&testUser)
+
 	if migration != nil {
 		fmt.Println("Error pushing models into database")
 	} else {
 		fmt.Println("Models succesfully pushed into database")
 	}
+
+	http.ListenAndServe(":3333", router.User_router(db))
 
 }

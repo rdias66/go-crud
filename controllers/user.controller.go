@@ -78,3 +78,28 @@ func UpdateUser(writer http.ResponseWriter, reader *http.Request, db *gorm.DB) {
 	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(existingUser)
 }
+
+func DeleteUser(writer http.ResponseWriter, reader *http.Request, db *gorm.DB) {
+	writer.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(reader)
+	userID := params["id"]
+
+	var existingUser models.User
+	if err := db.First(&existingUser, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.Error(writer, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(writer, "Failed to fetch user", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	existingUser.DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
+	if err := db.Save(&existingUser).Error; err != nil {
+		http.Error(writer, "Failed to delete user", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(existingUser)
+}
